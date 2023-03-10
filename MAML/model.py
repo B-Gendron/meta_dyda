@@ -1,9 +1,5 @@
 # Imports
 
-# Data handling
-
-# Dataset class
-
 # Dataloader
 
 # Instantiate the model (MLP with ReLU or softmax)
