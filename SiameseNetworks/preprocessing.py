@@ -94,15 +94,18 @@ vocab_stoi = pretrained_vocab.get_stoi()
 for split in ['train', 'validation', 'test']:
     dailydialog[split] = dailydialog[split].map(lambda e: tokenize_all_dialog(e, vocab_stoi), batched=True)
 
-# print("FIRST RECORDS ALONG WITH THE ASSOCIATED EMOTIONS")
-# print("")
-# print("Texts")
-# print(dailydialog['train']['text'][1:5])
-# print("Emotion labels")
-# print(dailydialog['train']['label'][1:5])
+print("FIRST RECORDS ALONG WITH THE ASSOCIATED EMOTIONS")
+print("")
+print("Texts")
+print(dailydialog['train']['text'][1:5])
+print("Emotion labels")
+print(dailydialog['train']['label'][1:5])
+
+# TODO flatten the vectors in res to have the right dimension !!!
+
 
 # Dataset class
-class DialogActDataset(Dataset):
+class DialogEmotionDataset(Dataset):
     def __init__(self, data, args):
       self.args = args
       self.data = data
@@ -119,9 +122,9 @@ class DialogActDataset(Dataset):
     
 # Instantiate dataloaders
 args = {'bsize': 64}
-train_loader = DataLoader(dataset=DialogActDataset(dailydialog["train"], args=args), batch_size=args['bsize'], shuffle=True, drop_last=True)
-val_loader   = DataLoader(dataset=DialogActDataset(dailydialog["validation"], args=args), batch_size=args['bsize'], shuffle=True, drop_last=True)
-test_loader  = DataLoader(dataset=DialogActDataset(dailydialog["test"], args=args), batch_size=args['bsize'], shuffle=True, drop_last=True)
+train_loader = DataLoader(dataset=DialogEmotionDataset(dailydialog["train"], args=args), batch_size=args['bsize'], shuffle=True, drop_last=True)
+val_loader   = DataLoader(dataset=DialogEmotionDataset(dailydialog["validation"], args=args), batch_size=args['bsize'], shuffle=True, drop_last=True)
+test_loader  = DataLoader(dataset=DialogEmotionDataset(dailydialog["test"], args=args), batch_size=args['bsize'], shuffle=True, drop_last=True)
 
 # Check the dimensions of the data
 # print(next(iter(train_loader))['text'].shape)
