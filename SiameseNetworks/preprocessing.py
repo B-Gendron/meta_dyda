@@ -1,6 +1,6 @@
-# --------------------------------------------------- #
-# --------------------- Imports --------------------- #
-# --------------------------------------------------- #
+        # --------------------------------------------------- #
+        # --------------------- Imports --------------------- #
+        # --------------------------------------------------- #
 
 # Torch utils
 import torch
@@ -22,11 +22,11 @@ from tqdm import tqdm
 from termcolor import colored
 from collections import Counter
 
-# --------------------------------------------------- #
-# ---------------- Vocabulary setup ----------------- #
-# --------------------------------------------------- #
+        # --------------------------------------------------- #
+        # ---------------- Vocabulary setup ----------------- #
+        # --------------------------------------------------- #
 
-from torchtext.vocab import GloVe, vocab, FastText
+from torchtext.vocab import vocab, FastText
 
 pretrained_vectors = FastText(language='en')
 pretrained_vocab = vocab(pretrained_vectors.stoi)
@@ -39,14 +39,14 @@ pretrained_vocab.insert_token("<pad>", pad_index)
 #this is necessary otherwise it will throw runtime error if OOV token is queried 
 pretrained_vocab.set_default_index(unk_index)
 
-# --------------------------------------------------- #
-# ----------------- Data handling ------------------- #
-# --------------------------------------------------- #
+        # --------------------------------------------------- #
+        # ----------------- Data handling ------------------- #
+        # --------------------------------------------------- #
 
 dailydialog = load_dataset('daily_dialog')
 tok = TweetTokenizer()
 
-def tokenize_pad_numericalize(entry, vocab_stoi, max_length=20):
+def tokenize_pad_numericalize_dialog(entry, vocab_stoi, max_length=20):
     ''' 
         Performs tokenization and padding at message level.
 
@@ -56,42 +56,54 @@ def tokenize_pad_numericalize(entry, vocab_stoi, max_length=20):
 
         @return padded_dialog (list): the tokenized and padded sentence 
     '''
-    text = [ vocab_stoi[token] if token in vocab_stoi else vocab_stoi['<unk>'] for token in tok.tokenize(entry.lower())]
-    padded_text = None
-    if len(text) < max_length:   
-        padded_text = text + [ vocab_stoi['<pad>'] for i in range(len(text), max_length) ] # add ones bt the end of the text and max_length
-    elif len(text) > max_length: 
-       padded_text = text[:max_length]
-    else:                        
-       padded_text = text
-    return padded_text
+    dialog = [ [ vocab_stoi[token] if token in vocab_stoi else vocab_stoi['<unk>'] for token in tok.tokenize(e.lower()) ] 
+            for e in entry ]
+    padded_dialog = list()
+    for d in dialog:
+        if len(d) < max_length:    padded_dialog.append( d + [ vocab_stoi['<pad>'] for i in range(len(d), max_length) ] )
+        elif len(d) > max_length:  padded_dialog.append(d[:max_length])
+        else:                      padded_dialog.append(d)
+    return padded_dialog
 
 
-def tokenize_all_utterances(entry, vocab_stoi, max_length=20):
+def tokenize_all_dialog(entries, vocab_stoi, max_message_length=20, max_dialog_length=12):
     ''' 
-        Apply tokenization to all the messages of each dialog. 
+        Apply tokenization to the whole dialog. 
 
         @param entries (list):      list of sentences that make up the dialog
         @param vocab_stoi (list):   a dict mapping the words to their indexes
-        @param max_length (int):    length threshold for padding messages(default=20)
+        @param max_message_length (int):    length threshold for padding messages(default=20)
+        @param max_dialog_length (int):     length threshold for padding dialogs (default=12)
 
-        @return res(dict):          the tokenized and padded utterances along with the associated labels
+        @return res (dict):          the tokenized and padded utterances along with the associated labels
     '''
-    dialog = entry['dialog']
-    emotions = entry['emotion']
-    messages, labels = [], []
-    for i in range(len(dialog)):
-        message = tokenize_pad_numericalize(dialog[i], vocab_stoi=vocab_stoi, max_length=max_length)
-        messages.append(message)
-        label = emotions[i]
-        labels.append(label)
-    res = {'text': messages, 'label': labels}
+    res_dialog, res_labels = [], []
+
+    for entry in entries['dialog']:
+        text  = tokenize_pad_numericalize_dialog(entry, vocab_stoi)
+        if len(text) < max_dialog_length:    text = text + [ [vocab_stoi['<pad>']] * max_message_length for i in range(len(text), max_dialog_length)]   # pad_message * (max_dialog_length - len(text))
+        elif len(text) > max_dialog_length:  text = text[-max_dialog_length:] # keeps the last n messages
+        res_dialog.append(text)
+
+    for labels in entries['act']:
+        if len(labels) < max_dialog_length:   labels = labels + [ 0 for i in range(len(labels), max_dialog_length) ]          # pad_label * (max_dialog_length - len(labels))
+        elif len(labels) > max_dialog_length: labels = labels[-max_dialog_length:]
+        res_labels.append(labels)
+
+    res = {'text': res_dialog, 'label': res_labels}
     return res
 
 # Apply tokenization and padding
 vocab_stoi = pretrained_vocab.get_stoi()
 for split in ['train', 'validation', 'test']:
- dailydialog[split] = dailydialog[split].map(lambda e: tokenize_all_utterances(e, vocab_stoi), batched=True)
+    dailydialog[split] = dailydialog[split].map(lambda e: tokenize_all_dialog(e, vocab_stoi), batched=True)
+
+# print("FIRST RECORDS ALONG WITH THE ASSOCIATED EMOTIONS")
+# print("")
+# print("Texts")
+# print(dailydialog['train']['text'][1:5])
+# print("Emotion labels")
+# print(dailydialog['train']['label'][1:5])
 
 # Dataset class
 
