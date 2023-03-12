@@ -3,25 +3,15 @@
         # --------------------------------------------------- #
 
 # Torch utils
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 from torchtext.vocab import vocab
 
 # Data loading and preprocessing
 from datasets import load_dataset
-import nltk
 from nltk.tokenize import TweetTokenizer
-
-from gensim.models.phrases import Phrases, Phraser
 
 # General purposes modules
 import numpy as np
-import pandas as pd
-from tqdm import tqdm
-from termcolor import colored
-from collections import Counter
 
         # --------------------------------------------------- #
         # ---------------- Vocabulary setup ----------------- #
@@ -29,7 +19,12 @@ from collections import Counter
 
 from torchtext.vocab import vocab, FastText
 
-pretrained_vectors = FastText(language='en')
+# use a function to be able to call it later on in the model instantiation
+def get_pretrained_vectors():
+    pretrained_vectors = FastText(language='en')
+    return pretrained_vectors
+
+pretrained_vectors = get_pretrained_vectors()
 pretrained_vocab = vocab(pretrained_vectors.stoi)
 unk_token = "<unk>"
 unk_index = 0
