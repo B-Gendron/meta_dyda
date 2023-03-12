@@ -6,6 +6,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.utils.data import Dataset, DataLoader
 from torchtext.vocab import vocab
 
 # Data loading and preprocessing
@@ -85,7 +86,7 @@ def tokenize_all_dialog(entries, vocab_stoi, max_message_length=20, max_dialog_l
         elif len(text) > max_dialog_length:  text = text[-max_dialog_length:] # keeps the last n messages
         res_dialog.append(text)
 
-    for labels in entries['act']:
+    for labels in entries['emotion']:
         if len(labels) < max_dialog_length:   labels = labels + [ 0 for i in range(len(labels), max_dialog_length) ]          # pad_label * (max_dialog_length - len(labels))
         elif len(labels) > max_dialog_length: labels = labels[-max_dialog_length:]
         res_labels.append(labels)
@@ -106,4 +107,27 @@ for split in ['train', 'validation', 'test']:
 # print(dailydialog['train']['label'][1:5])
 
 # Dataset class
+class DialogActDataset(Dataset):
+    def __init__(self, data, args):
+      self.args = args
+      self.data = data
 
+    def __len__(self):
+      return len(self.data)
+    
+    def __getitem__(self, idx):
+      item = {
+          "text": np.array(self.data[idx]["text"]),
+          "label": np.array(self.data[idx]["label"])
+      }
+      return item
+    
+# Instantiate dataloaders
+args = {'bsize': 64}
+train_loader = DataLoader(dataset=DialogActDataset(dailydialog["train"], args=args), batch_size=args['bsize'], shuffle=True, drop_last=True)
+val_loader   = DataLoader(dataset=DialogActDataset(dailydialog["validation"], args=args), batch_size=args['bsize'], shuffle=True, drop_last=True)
+test_loader  = DataLoader(dataset=DialogActDataset(dailydialog["test"], args=args), batch_size=args['bsize'], shuffle=True, drop_last=True)
+
+# Check the dimensions of the data
+# print(next(iter(train_loader))['text'].shape)
+# Expected output: torch.Size([64, 12, 20])
