@@ -149,7 +149,7 @@ class SiameseNetwork(nn.Module):
 
         return output
 
-# TEST FORWARD PATH
+# TEST FORWARD PATH ON ONE ITERATION:
 model = SiameseNetwork(input_dim=1, hidden_dim=300, n_classes=7)
 data = next(iter(train_loader))
 output = model(data["anchor"][1], data["positive"][1], data["negative"][1])
