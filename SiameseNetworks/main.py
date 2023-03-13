@@ -20,7 +20,7 @@ from copy import deepcopy
 from tqdm import tqdm
 
 # From others files of this repo
-# from preprocessing import get_pretrained_vectors
+from preprocessing import get_pretrained_vectors, get_dyda_utterances
 
         # --------------------------------------------------- #
         # ------------------ Dataset class ------------------ #
@@ -48,7 +48,6 @@ class DialogEmotionDataset(Dataset):
 
         # get all the labels
         all_labels = np.array(deepcopy(self.data["label"])) # deepcopy instead of clone because data format is list here
-        print(all_labels)
 
         self.grouped_indexes = {}
         for i in range(0,7):
@@ -71,9 +70,9 @@ class DialogEmotionDataset(Dataset):
         index_negative = random.choice(self.grouped_indexes[negative_class])
 
         # retrieve the associated entries
-        anchor = np.array(self.data[index_anchor]["text"])
-        positive = np.array(self.data[index_positive]["text"])
-        negative = np.array(self.data[index_negative]["text"])
+        anchor = np.array(self.data[int(index_anchor)]["text"])
+        positive = np.array(self.data[int(index_positive)]["text"])
+        negative = np.array(self.data[int(index_negative)]["text"])
 
         item = {
           "anchor":     anchor,
@@ -83,12 +82,12 @@ class DialogEmotionDataset(Dataset):
         }
         return item
 
+
         # --------------------------------------------------- #
         # ------------------- Dataloaders ------------------- #
         # --------------------------------------------------- #
 
-with open("data/data_utterances.json", 'r') as f:
-    dyda_utterances = json.load(f)
+dyda_utterances = get_dyda_utterances()
 
 def get_args_and_dataloaders():
     args = {'bsize': 64}
@@ -99,17 +98,17 @@ def get_args_and_dataloaders():
 
 args, train_loader, val_loader, test_loader = get_args_and_dataloaders()
 
-if __name__=='__main__':
-    print(dyda_utterances)
-    print("")
-    print("Check the dimensions of the dataloader:")
-    print(next(iter(train_loader))["anchor"].shape)
-    print("Expected output: torch.Size([64])")
+# print("")
+# print("Check the dimensions of the dataloader:")
+# print(next(iter(train_loader))["anchor"].shape)
+# print("Expected output: torch.Size([64, 20])")
 
 
         # --------------------------------------------------- #
         # ------------------- Model class ------------------- #
         # --------------------------------------------------- #
+
+pretrained_vectors = get_pretrained_vectors()
 
 # Instantiate the Siamese Networks (MLP with ReLU or softmax)
 class SiameseNetwork(nn.Module):
@@ -121,7 +120,7 @@ class SiameseNetwork(nn.Module):
         super(SiameseNetwork, self).__init__()
 
         # embedding layer
-        self.ebd = torch.nn.Embedding.from_pretrained(get_pretrained_vectors(), freeze=True)
+        self.ebd = torch.nn.Embedding.from_pretrained(pretrained_vectors.vectors, freeze=False)
 
         # two linear layers
         self.hidden_layer = torch.nn.Linear(in_features=hidden_dim, out_features=hidden_dim, bias=True)
@@ -145,10 +144,17 @@ class SiameseNetwork(nn.Module):
         A = self.forward_once(input1)
         P = self.forward_once(input2)
         N = self.forward_once(input3)
-        output = nn.TripletMarginLoss(A, P, N)
+        triplet_loss = nn.TripletMarginLoss(margin=1.0, p=2)
+        output = triplet_loss(A, P, N)
 
         return output
 
+# TEST FORWARD PATH
+model = SiameseNetwork(input_dim=1, hidden_dim=300, n_classes=7)
+data = next(iter(train_loader))
+output = model(data["anchor"][1], data["positive"][1], data["negative"][1])
+print(output)
+print("Expected output: tensor(0.8057, grad_fn=<MeanBackward0>)")
 
         # --------------------------------------------------- #
         # ------------------ Training loop ------------------ #

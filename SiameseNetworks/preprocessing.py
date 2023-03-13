@@ -125,7 +125,7 @@ x_train, x_val, x_test, y_train, y_val, y_test = reshape_data_utterances()
 
 def get_dyda_utterances():
     d = {'train':Dataset.from_dict({'label':y_train,'text':x_train}),
-     'val':Dataset.from_dict({'label':y_val,'text':x_val}),
+     'validation':Dataset.from_dict({'label':y_val,'text':x_val}),
      'test':Dataset.from_dict({'label':y_test,'text':x_test})
      }
     return d
