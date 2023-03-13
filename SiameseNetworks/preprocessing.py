@@ -14,7 +14,8 @@ from nltk.tokenize import TweetTokenizer
 
 # General purposes modules
 import numpy as np
-from random import randint
+import random
+from copy import deepcopy
 
         # --------------------------------------------------- #
         # ---------------- Vocabulary setup ----------------- #
@@ -148,16 +149,48 @@ class DialogEmotionDataset(Dataset):
     def __init__(self, data, args):
         self.args = args
         self.data = data
+        self.utterances_by_class()
 
     def __len__(self):
         return len(self.data)
     
+    def utterances_by_class(self):
+        '''
+            Classify all the utterances of the data based on their class. 
+
+            This function, called in __init__, builds a new dictionary where the data is sorted by keys, being the 5 possible classes. 
+        '''
+
+        # get all the labels
+        all_labels = np.array(deepcopy(self.data["label"])) # deepcopy instead of clone because data format is list here
+
+        self.grouped_utterances = {}
+        for i in range(0,7):
+            self.grouped_utterances[i] = np.where((all_labels==i))[0]
+    
     def __getitem__(self, idx):
-        # choose a random class
-        anchor_class = randint(0,4)
-        negative_class = randint(0,4)
+        # choose a random class for anchor and positive
+        anchor_class = random.randintrandint(0,6)
+        # choose a distinct random class for negative
+        negative_class = random.randint(0,6)
         while negative_class == anchor_class:
-            negative_class = randint(0,4)
+            negative_class = random.randint(0,6)
+
+        # pick random indexes in the grouped utterances from the selected classes
+        index_anchor = random.randint(0, len(self.grouped_utterances[anchor_class]))
+        index_positive = random.randint(0, len(self.grouped_utterances[anchor_class]))
+        while index_positive == index_anchor:
+            index_positive = random.randint(0, len(self.grouped_utterances[anchor_class]))
+        index_negative = random.randint(0, len(self.grouped_utterances[negative_class]))
+
+        # retrieve the associated entries
+        
+
+        # -- DRAFT -- #
+        # random.choice may not be relevant here because then we have to compare two lists :( better to compare indexes 
+        # text_anchor = random.choice(self.grouped_utterances[anchor_class])
+        # text_positive = random.choice(self.grouped_utterances[anchor_class])
+        # -- END DRAFT -- #
 
         item = { # TBC
           "anchor": np.array(self.data[idx]["text"]),
