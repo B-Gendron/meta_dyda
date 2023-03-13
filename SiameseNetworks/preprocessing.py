@@ -152,7 +152,7 @@ class DialogEmotionDataset(Dataset):
         self.utterances_by_class()
 
     def __len__(self):
-        return len(self.data)
+        return 1000
     
     def utterances_by_class(self):
         '''
@@ -170,7 +170,7 @@ class DialogEmotionDataset(Dataset):
     
     def __getitem__(self, idx):
         # choose a random class for anchor and positive
-        anchor_class = random.randintrandint(0,6)
+        anchor_class = random.randint(0,6)
         # choose a distinct random class for negative
         negative_class = random.randint(0,6)
         while negative_class == anchor_class:
@@ -214,6 +214,7 @@ def get_args_and_dataloaders():
 args, train_loader, val_loader, test_loader = get_args_and_dataloaders()
 
 # print("")
+# print(train_loader)
 # print("Check the dimensions of the dataloader:")
-# print(next(iter(train_loader))['text'].shape)
+# print(next(iter(train_loader))["anchor"].shape)
 # print("Expected output: torch.Size([64, 20])")
