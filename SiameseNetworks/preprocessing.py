@@ -7,7 +7,8 @@ from torch.utils.data import Dataset, DataLoader
 from torchtext.vocab import vocab
 
 # Data loading and preprocessing
-from datasets import load_dataset
+from datasets import load_dataset, Dataset
+from datasets.dataset_dict import DatasetDict
 from nltk.tokenize import TweetTokenizer
 
 # General purposes modules
@@ -94,14 +95,42 @@ vocab_stoi = pretrained_vocab.get_stoi()
 for split in ['train', 'validation', 'test']:
     dailydialog[split] = dailydialog[split].map(lambda e: tokenize_all_dialog(e, vocab_stoi), batched=True)
 
-print("FIRST RECORDS ALONG WITH THE ASSOCIATED EMOTIONS")
-print("")
-print("Texts")
-print(dailydialog['train']['text'][1:5])
-print("Emotion labels")
-print(dailydialog['train']['label'][1:5])
+# print("FIRST RECORDS ALONG WITH THE ASSOCIATED EMOTIONS")
+# print("")
+# print("Texts")
+# print(dailydialog['train']['text'][1:5])
+# print("Emotion labels")
+# print(dailydialog['train']['label'][1:5])
 
-# TODO flatten the vectors in res to have the right dimension !!!
+# TODO include the code from the experiments.py file here to see if it works!
+
+# Format the useful data in another dataset to deal with text at the utterance level (changes in dimensions)
+n_train = dailydialog['train'].num_rows
+n_val = dailydialog['validation'].num_rows
+n_test = dailydialog['test'].num_rows
+
+def reshape_data_utterances(max_message_length=20, max_dialog_length=12):
+    x_train = np.array(dailydialog['train']['text']).reshape((max_dialog_length*n_train, max_message_length))
+    x_val = np.array(dailydialog['validation']['text']).reshape((max_dialog_length*n_val, max_message_length))
+    x_test = np.array(dailydialog['test']['text']).reshape((max_dialog_length*n_test, max_message_length))
+    y_train = np.array(dailydialog['train']['label']).reshape((-1,1))
+    y_val = np.array(dailydialog['validation']['label']).reshape((-1,1))
+    y_test = np.array(dailydialog['test']['label']).reshape((-1,1))
+    return x_train, x_val, x_test, y_train, y_val, y_test
+
+x_train, x_val, x_test, y_train, y_val, y_test = reshape_data_utterances()
+
+d = {'train':Dataset.from_dict({'text':x_train, 'label':y_train}),
+     'val':Dataset.from_dict({'text':x_val, 'label':y_val}),
+     'test':Dataset.from_dict({'text':x_test, 'label':y_test})
+     }
+
+print("")
+print("Final dataset structure:")
+print(DatasetDict(d))
+print("")
+print("Compare with dailydialog after preprocessing:")
+print(dailydialog)
 
 
 # Dataset class
@@ -122,9 +151,9 @@ class DialogEmotionDataset(Dataset):
     
 # Instantiate dataloaders
 args = {'bsize': 64}
-train_loader = DataLoader(dataset=DialogEmotionDataset(dailydialog["train"], args=args), batch_size=args['bsize'], shuffle=True, drop_last=True)
-val_loader   = DataLoader(dataset=DialogEmotionDataset(dailydialog["validation"], args=args), batch_size=args['bsize'], shuffle=True, drop_last=True)
-test_loader  = DataLoader(dataset=DialogEmotionDataset(dailydialog["test"], args=args), batch_size=args['bsize'], shuffle=True, drop_last=True)
+# train_loader = DataLoader(dataset=DialogEmotionDataset(dailydialog["train"], args=args), batch_size=args['bsize'], shuffle=True, drop_last=True)
+# val_loader   = DataLoader(dataset=DialogEmotionDataset(dailydialog["validation"], args=args), batch_size=args['bsize'], shuffle=True, drop_last=True)
+# test_loader  = DataLoader(dataset=DialogEmotionDataset(dailydialog["test"], args=args), batch_size=args['bsize'], shuffle=True, drop_last=True)
 
 # Check the dimensions of the data
 # print(next(iter(train_loader))['text'].shape)
