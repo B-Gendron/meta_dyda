@@ -128,93 +128,15 @@ dyda_utterances = {'train':{'text':x_train.tolist(), 'label':y_train.tolist()},
      'test':{'text':x_test.tolist(), 'label':y_test.tolist()}
      }
 
-# hdf5 for saving data files
-#torch.save(dyda_utterances, 'utterances_data.pt')
-import json
-with open("data_utterances.json", 'w') as f:
-    json.dump(dyda_utterances, f)
+# UNCOMMENT THIS IF YOU NEED TO SAVE THE DATA AGAIN:
+# import json
+# with open("data/data_utterances.json", 'w') as f:
+#     json.dump(dyda_utterances, f)
 
+# CHECK THE FINAL DATASET STRUCTURE:
 # print("")
 # print("Final dataset structure:")
 # print(DatasetDict(dyda_utterances))
 # print("")
 # print("Compare with dailydialog after preprocessing:")
 # print(dailydialog)
-
-# import again to use the right module in the class
-from torch.utils.data import Dataset
-
-# Dataset class
-class DialogEmotionDataset(Dataset):
-    def __init__(self, data, args):
-        self.args = args
-        self.data = data
-        self.utterances_by_class()
-
-    def __len__(self):
-        return 1000
-    
-    def utterances_by_class(self):
-        '''
-            Classify all the utterances of the data based on their class. 
-
-            This function, called in __init__, builds a new dictionary where the data is sorted by keys, being the 5 possible classes. 
-        '''
-
-        # get all the labels
-        all_labels = np.array(deepcopy(self.data["label"])) # deepcopy instead of clone because data format is list here
-
-        self.grouped_utterances = {}
-        for i in range(0,7):
-            self.grouped_utterances[i] = np.where((all_labels==i))[0]
-    
-    def __getitem__(self, idx):
-        # choose a random class for anchor and positive
-        anchor_class = random.randint(0,6)
-        # choose a distinct random class for negative
-        negative_class = random.randint(0,6)
-        while negative_class == anchor_class:
-            negative_class = random.randint(0,6)
-
-        # pick random indexes in the grouped utterances from the selected classes
-        index_anchor = random.randint(0, len(self.grouped_utterances[anchor_class]))
-        index_positive = random.randint(0, len(self.grouped_utterances[anchor_class]))
-        while index_positive == index_anchor:
-            index_positive = random.randint(0, len(self.grouped_utterances[anchor_class]))
-        index_negative = random.randint(0, len(self.grouped_utterances[negative_class]))
-
-        # retrieve the associated entries
-        anchor = self.grouped_utterances[anchor_class][index_anchor]
-        positive = self.grouped_utterances[anchor_class][index_positive]
-        negative = self.grouped_utterances[negative_class][index_negative]
-
-        # -- DRAFT -- #
-        # random.choice may not be relevant here because then we have to compare two lists :( better to compare indexes 
-        # text_anchor = random.choice(self.grouped_utterances[anchor_class])
-        # text_positive = random.choice(self.grouped_utterances[anchor_class])
-        # -- END DRAFT -- #
-
-        item = {
-          "anchor":     anchor,
-          "positive":   positive,
-          "negative":   negative,
-          "label":      np.array([anchor_class, anchor_class, negative_class])
-        }
-        return item
-    
-# Instantiate dataloaders
-
-def get_args_and_dataloaders():
-    args = {'bsize': 64}
-    train_loader = DataLoader(dataset=DialogEmotionDataset(dyda_utterances["train"], args=args), batch_size=args['bsize'], shuffle=True, drop_last=True)
-    val_loader   = DataLoader(dataset=DialogEmotionDataset(dyda_utterances["validation"], args=args), batch_size=args['bsize'], shuffle=True, drop_last=True)
-    test_loader  = DataLoader(dataset=DialogEmotionDataset(dyda_utterances["test"], args=args), batch_size=args['bsize'], shuffle=True, drop_last=True)
-    return args, train_loader, val_loader, test_loader
-
-args, train_loader, val_loader, test_loader = get_args_and_dataloaders()
-
-# print("")
-# print(train_loader)
-# print("Check the dimensions of the dataloader:")
-# print(next(iter(train_loader))["anchor"].shape)
-# print("Expected output: torch.Size([64, 20])")
