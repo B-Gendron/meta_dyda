@@ -7,15 +7,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
-from torchtext.vocab import vocab
 
 # Data loading and preprocessing
 import json
-from datasets import load_dataset
-import nltk
-from nltk.tokenize import TweetTokenizer
-
-from gensim.models.phrases import Phrases, Phraser
 
 # General purposes modules
 import numpy as np
@@ -23,11 +17,9 @@ import pandas as pd
 import random
 from copy import deepcopy
 from tqdm import tqdm
-from termcolor import colored
-from collections import Counter
 
 # From others files of this repo
-from preprocessing import get_pretrained_vectors, get_args_and_dataloaders
+from preprocessing import get_pretrained_vectors
 
         # --------------------------------------------------- #
         # ------------------ Dataset class ------------------ #
@@ -98,7 +90,8 @@ class DialogEmotionDataset(Dataset):
         # ------------------- Dataloaders ------------------- #
         # --------------------------------------------------- #
 
-dyda_utterances = json.load("data/data_utterances.json")
+with open("data/data_utterances.json", 'r') as f:
+    dyda_utterances = json.load(f)
 
 def get_args_and_dataloaders():
     args = {'bsize': 64}
@@ -109,11 +102,10 @@ def get_args_and_dataloaders():
 
 args, train_loader, val_loader, test_loader = get_args_and_dataloaders()
 
-# print("")
-# print(train_loader)
-# print("Check the dimensions of the dataloader:")
-# print(next(iter(train_loader))["anchor"].shape)
-# print("Expected output: torch.Size([64, 20])")
+print("")
+print("Check the dimensions of the dataloader:")
+print(next(iter(train_loader))["anchor"].shape)
+print("Expected output: torch.Size([64])")
 
 
         # --------------------------------------------------- #
