@@ -121,13 +121,16 @@ def reshape_data_utterances(max_message_length=20, max_dialog_length=12):
 
 x_train, x_val, x_test, y_train, y_val, y_test = reshape_data_utterances()
 
-dyda_utterances = {'train':Dataset.from_dict({'text':x_train, 'label':y_train}),
-     'validation':Dataset.from_dict({'text':x_val, 'label':y_val}),
-     'test':Dataset.from_dict({'text':x_test, 'label':y_test})
+dyda_utterances = {'train':{'text':x_train.tolist(), 'label':y_train.tolist()},
+     'validation':{'text':x_val.tolist(), 'label':y_val.tolist()},
+     'test':{'text':x_test.tolist(), 'label':y_test.tolist()}
      }
 
 # hdf5 for saving data files
 #torch.save(dyda_utterances, 'utterances_data.pt')
+import json
+with open("data_utterances.json", 'w') as f:
+    json.dump(dyda_utterances, f)
 
 # print("")
 # print("Final dataset structure:")
@@ -149,8 +152,10 @@ class DialogEmotionDataset(Dataset):
         return len(self.data)
     
     def __getitem__(self, idx):
-        item = {
-          "text": np.array(self.data[idx]["text"]),
+        item = { # TBC
+          "anchor": np.array(self.data[idx]["text"]),
+          "positive": np.array(self.data[idx]["text"]),
+          "negative": np.array(self.data[idx]["text"]),
           "label": np.array(self.data[idx]["label"])
         }
         return item
@@ -166,7 +171,7 @@ def get_args_and_dataloaders():
 
 args, train_loader, val_loader, test_loader = get_args_and_dataloaders()
 
-print("")
-print("Check the dimensions of the dataloader:")
-print(next(iter(train_loader))['text'].shape)
-print("Expected output: torch.Size([64, 20])")
+# print("")
+# print("Check the dimensions of the dataloader:")
+# print(next(iter(train_loader))['text'].shape)
+# print("Expected output: torch.Size([64, 20])")
