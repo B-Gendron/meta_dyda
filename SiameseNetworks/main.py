@@ -6,6 +6,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 
 # Data loading and preprocessing
@@ -18,6 +19,7 @@ import pandas as pd
 import random
 from copy import deepcopy
 from tqdm import tqdm
+from termcolor import colored
 
 # From others files of this repo
 from preprocessing import get_pretrained_vectors, get_dyda_utterances
@@ -97,6 +99,7 @@ def get_args_and_dataloaders():
     return args, train_loader, val_loader, test_loader
 
 args, train_loader, val_loader, test_loader = get_args_and_dataloaders()
+args['max_eps'] = 10
 
 # print("")
 # print("Check the dimensions of the dataloader:")
@@ -150,11 +153,11 @@ class SiameseNetwork(nn.Module):
         return output
 
 # TEST FORWARD PATH ON ONE ITERATION:
-model = SiameseNetwork(input_dim=1, hidden_dim=300, n_classes=7)
-data = next(iter(train_loader))
-output = model(data["anchor"][1], data["positive"][1], data["negative"][1])
-print(output)
-print("Expected output: tensor(0.8057, grad_fn=<MeanBackward0>)")
+# model = SiameseNetwork(input_dim=20, hidden_dim=300, n_classes=7)
+# data = next(iter(train_loader))
+# output = model(data["anchor"][1], data["positive"][1], data["negative"][1])
+# print(output)
+# print("Expected output: tensor(0.8057, grad_fn=<MeanBackward0>)")
 
         # --------------------------------------------------- #
         # ------------------ Training loop ------------------ #
@@ -162,13 +165,31 @@ print("Expected output: tensor(0.8057, grad_fn=<MeanBackward0>)")
 
 def train(args, model, device, train_loader, optimizer, epoch):
     model.train()
+    loss_it = []
 
-    for it, (text1, text2, text3, labels) in tqdm(enumerate(train_loader), desc="Epoch %s: " % (epoch), total=train_loader.__len__()):
-        text1, text2, text3 = text1.to(device), text2.to(device), text3.to(device)
+    for it, batch in tqdm(enumerate(train_loader), desc="Epoch %s: " % (epoch), total=train_loader.__len__()):
+
+        batch = {'anchor': batch['anchor'].to(device), 'positive': batch['positive'].to(device), 'negative' : batch['negative'].to(device), batch['label']: batch['label'].to(device)}
+
         optimizer.zero_grad()
-        output = model(text1, text2, text3).squeeze()
+
+        # perform training
+        output = model(batch['anchor'], batch['positive'], batch['negative'])
         output.backward()
         optimizer.step()
+
+        # store loss history
+        loss_it.append(output.item())
+
+    # print useful information about the training progress and scores on this training set's full pass (i.e. 1 epoch)
+    print("Epoch %s/%s : %s : (%s %s) (%s %s)" % (colored(str(epoch), 'blue'),args['max_eps'] , colored('Training', 'blue'), colored('loss', 'cyan'), sum(loss_it)/len(loss_it), colored('acc', 'cyan')))
+
+    # return the loss history so we can plot it later
+    return loss_it
+
+model = SiameseNetwork(input_dim=20, hidden_dim=300, n_classes=7)
+optimizer = optim.Adam(model.parameters(), lr = 1e-3)
+train(args=args, model=model, device='cpu', train_loader=train_loader, optimizer=optimizer, epoch=1)
 
         # --------------------------------------------------- #
         # ----------------- Inference loop ------------------ #
