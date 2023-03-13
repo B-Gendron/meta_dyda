@@ -184,7 +184,9 @@ class DialogEmotionDataset(Dataset):
         index_negative = random.randint(0, len(self.grouped_utterances[negative_class]))
 
         # retrieve the associated entries
-        
+        anchor = self.grouped_utterances[anchor_class][index_anchor]
+        positive = self.grouped_utterances[anchor_class][index_positive]
+        negative = self.grouped_utterances[negative_class][index_negative]
 
         # -- DRAFT -- #
         # random.choice may not be relevant here because then we have to compare two lists :( better to compare indexes 
@@ -192,11 +194,11 @@ class DialogEmotionDataset(Dataset):
         # text_positive = random.choice(self.grouped_utterances[anchor_class])
         # -- END DRAFT -- #
 
-        item = { # TBC
-          "anchor": np.array(self.data[idx]["text"]),
-          "positive": np.array(self.data[idx]["text"]),
-          "negative": np.array(self.data[idx]["text"]),
-          "label": np.array(self.data[idx]["label"])
+        item = {
+          "anchor":     anchor,
+          "positive":   positive,
+          "negative":   negative,
+          "label":      np.array([anchor_class, anchor_class, negative_class])
         }
         return item
     
