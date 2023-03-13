@@ -98,7 +98,7 @@ class DialogEmotionDataset(Dataset):
         # ------------------- Dataloaders ------------------- #
         # --------------------------------------------------- #
 
-dyda_utterances = json.load()
+dyda_utterances = json.load("data/data_utterances.json")
 
 def get_args_and_dataloaders():
     args = {'bsize': 64}
