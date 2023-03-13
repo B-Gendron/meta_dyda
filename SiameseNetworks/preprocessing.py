@@ -4,6 +4,7 @@
 
 # Torch utils
 from torch.utils.data import Dataset, DataLoader
+import torch
 from torchtext.vocab import vocab
 
 # Data loading and preprocessing
@@ -120,41 +121,52 @@ def reshape_data_utterances(max_message_length=20, max_dialog_length=12):
 
 x_train, x_val, x_test, y_train, y_val, y_test = reshape_data_utterances()
 
-d = {'train':Dataset.from_dict({'text':x_train, 'label':y_train}),
-     'val':Dataset.from_dict({'text':x_val, 'label':y_val}),
+dyda_utterances = {'train':Dataset.from_dict({'text':x_train, 'label':y_train}),
+     'validation':Dataset.from_dict({'text':x_val, 'label':y_val}),
      'test':Dataset.from_dict({'text':x_test, 'label':y_test})
      }
 
-print("")
-print("Final dataset structure:")
-print(DatasetDict(d))
-print("")
-print("Compare with dailydialog after preprocessing:")
-print(dailydialog)
+# hdf5 for saving data files
+#torch.save(dyda_utterances, 'utterances_data.pt')
 
+# print("")
+# print("Final dataset structure:")
+# print(DatasetDict(dyda_utterances))
+# print("")
+# print("Compare with dailydialog after preprocessing:")
+# print(dailydialog)
+
+# import again to use the right module in the class
+from torch.utils.data import Dataset
 
 # Dataset class
 class DialogEmotionDataset(Dataset):
     def __init__(self, data, args):
-      self.args = args
-      self.data = data
+        self.args = args
+        self.data = data
 
     def __len__(self):
-      return len(self.data)
+        return len(self.data)
     
     def __getitem__(self, idx):
-      item = {
+        item = {
           "text": np.array(self.data[idx]["text"]),
           "label": np.array(self.data[idx]["label"])
-      }
-      return item
+        }
+        return item
     
 # Instantiate dataloaders
-args = {'bsize': 64}
-# train_loader = DataLoader(dataset=DialogEmotionDataset(dailydialog["train"], args=args), batch_size=args['bsize'], shuffle=True, drop_last=True)
-# val_loader   = DataLoader(dataset=DialogEmotionDataset(dailydialog["validation"], args=args), batch_size=args['bsize'], shuffle=True, drop_last=True)
-# test_loader  = DataLoader(dataset=DialogEmotionDataset(dailydialog["test"], args=args), batch_size=args['bsize'], shuffle=True, drop_last=True)
 
-# Check the dimensions of the data
-# print(next(iter(train_loader))['text'].shape)
-# Expected output: torch.Size([64, 12, 20])
+def get_args_and_dataloaders():
+    args = {'bsize': 64}
+    train_loader = DataLoader(dataset=DialogEmotionDataset(dyda_utterances["train"], args=args), batch_size=args['bsize'], shuffle=True, drop_last=True)
+    val_loader   = DataLoader(dataset=DialogEmotionDataset(dyda_utterances["validation"], args=args), batch_size=args['bsize'], shuffle=True, drop_last=True)
+    test_loader  = DataLoader(dataset=DialogEmotionDataset(dyda_utterances["test"], args=args), batch_size=args['bsize'], shuffle=True, drop_last=True)
+    return args, train_loader, val_loader, test_loader
+
+args, train_loader, val_loader, test_loader = get_args_and_dataloaders()
+
+print("")
+print("Check the dimensions of the dataloader:")
+print(next(iter(train_loader))['text'].shape)
+print("Expected output: torch.Size([64, 20])")

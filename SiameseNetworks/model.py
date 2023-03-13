@@ -24,7 +24,7 @@ from termcolor import colored
 from collections import Counter
 
 # From others files of this repo
-from preprocessing import get_pretrained_vectors
+from preprocessing import get_pretrained_vectors, get_args_and_dataloaders
 
 # Instantiate the Siamese Networks (MLP with ReLU or softmax)
 class SiameseNetwork(nn.Module):
