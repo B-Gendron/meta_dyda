@@ -14,6 +14,7 @@ from nltk.tokenize import TweetTokenizer
 
 # General purposes modules
 import numpy as np
+from random import randint
 
         # --------------------------------------------------- #
         # ---------------- Vocabulary setup ----------------- #
@@ -152,6 +153,12 @@ class DialogEmotionDataset(Dataset):
         return len(self.data)
     
     def __getitem__(self, idx):
+        # choose a random class
+        anchor_class = randint(0,4)
+        negative_class = randint(0,4)
+        while negative_class == anchor_class:
+            negative_class = randint(0,4)
+
         item = { # TBC
           "anchor": np.array(self.data[idx]["text"]),
           "positive": np.array(self.data[idx]["text"]),
