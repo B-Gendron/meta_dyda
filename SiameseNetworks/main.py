@@ -10,6 +10,7 @@ from torch.utils.data import Dataset, DataLoader
 
 # Data loading and preprocessing
 import json
+from datasets.dataset_dict import DatasetDict
 
 # General purposes modules
 import numpy as np
@@ -19,7 +20,7 @@ from copy import deepcopy
 from tqdm import tqdm
 
 # From others files of this repo
-from preprocessing import get_pretrained_vectors
+# from preprocessing import get_pretrained_vectors
 
         # --------------------------------------------------- #
         # ------------------ Dataset class ------------------ #
@@ -33,12 +34,12 @@ class DialogEmotionDataset(Dataset):
     def __init__(self, data, args):
         self.args = args
         self.data = data
-        self.utterances_by_class()
+        self.indexes_by_class()
 
     def __len__(self):
         return 1000
     
-    def utterances_by_class(self):
+    def indexes_by_class(self):
         '''
             Classify all the utterances of the data based on their class. 
 
@@ -47,10 +48,12 @@ class DialogEmotionDataset(Dataset):
 
         # get all the labels
         all_labels = np.array(deepcopy(self.data["label"])) # deepcopy instead of clone because data format is list here
+        print(all_labels)
 
-        self.grouped_utterances = {}
+        self.grouped_indexes = {}
         for i in range(0,7):
-            self.grouped_utterances[i] = np.where((all_labels==i))[0]
+            # retrieve all the indexes for each class
+            self.grouped_indexes[i] = np.where((all_labels==i))[0]
     
     def __getitem__(self, idx):
         # choose a random class for anchor and positive
@@ -61,22 +64,16 @@ class DialogEmotionDataset(Dataset):
             negative_class = random.randint(0,6)
 
         # pick random indexes in the grouped utterances from the selected classes
-        index_anchor = random.randint(0, len(self.grouped_utterances[anchor_class]))
-        index_positive = random.randint(0, len(self.grouped_utterances[anchor_class]))
+        index_anchor = random.choice(self.grouped_indexes[anchor_class])
+        index_positive = random.choice(self.grouped_indexes[anchor_class])
         while index_positive == index_anchor:
-            index_positive = random.randint(0, len(self.grouped_utterances[anchor_class]))
-        index_negative = random.randint(0, len(self.grouped_utterances[negative_class]))
+            index_positive = random.choice(self.grouped_indexes[anchor_class])
+        index_negative = random.choice(self.grouped_indexes[negative_class])
 
         # retrieve the associated entries
-        anchor = self.grouped_utterances[anchor_class][index_anchor]
-        positive = self.grouped_utterances[anchor_class][index_positive]
-        negative = self.grouped_utterances[negative_class][index_negative]
-
-        # -- DRAFT -- #
-        # random.choice may not be relevant here because then we have to compare two lists :( better to compare indexes 
-        # text_anchor = random.choice(self.grouped_utterances[anchor_class])
-        # text_positive = random.choice(self.grouped_utterances[anchor_class])
-        # -- END DRAFT -- #
+        anchor = np.array(self.data[index_anchor]["text"])
+        positive = np.array(self.data[index_positive]["text"])
+        negative = np.array(self.data[index_negative]["text"])
 
         item = {
           "anchor":     anchor,
@@ -102,10 +99,12 @@ def get_args_and_dataloaders():
 
 args, train_loader, val_loader, test_loader = get_args_and_dataloaders()
 
-print("")
-print("Check the dimensions of the dataloader:")
-print(next(iter(train_loader))["anchor"].shape)
-print("Expected output: torch.Size([64])")
+if __name__=='__main__':
+    print(dyda_utterances)
+    print("")
+    print("Check the dimensions of the dataloader:")
+    print(next(iter(train_loader))["anchor"].shape)
+    print("Expected output: torch.Size([64])")
 
 
         # --------------------------------------------------- #

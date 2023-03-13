@@ -123,10 +123,14 @@ def reshape_data_utterances(max_message_length=20, max_dialog_length=12):
 
 x_train, x_val, x_test, y_train, y_val, y_test = reshape_data_utterances()
 
-dyda_utterances = {'train':{'text':x_train.tolist(), 'label':y_train.tolist()},
-     'validation':{'text':x_val.tolist(), 'label':y_val.tolist()},
-     'test':{'text':x_test.tolist(), 'label':y_test.tolist()}
+def get_dyda_utterances():
+    d = {'train':Dataset.from_dict({'label':y_train,'text':x_train}),
+     'val':Dataset.from_dict({'label':y_val,'text':x_val}),
+     'test':Dataset.from_dict({'label':y_test,'text':x_test})
      }
+    return d
+
+dyda_utterances = get_dyda_utterances()
 
 # UNCOMMENT THIS IF YOU NEED TO SAVE THE DATA AGAIN:
 # import json
