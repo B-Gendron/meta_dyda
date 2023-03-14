@@ -1,2 +1,3 @@
 SiameseNetworks/.vector_cache
 SiameseNetworks/utterances_data.pt
+SiameseNetworks/models/utterance_model.pt
