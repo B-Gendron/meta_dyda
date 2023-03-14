@@ -199,13 +199,13 @@ def run_epochs(model, args, optimizer, train_loader, device):
     return val_ep_losses
 
 # PERFORM TRAINING : TO BE DONE ONLY TO REFRESH THE MODEL PARAMETERS
-model = SiameseNetwork(input_dim=20, hidden_dim=300, n_classes=7)
-optimizer = optim.Adam(model.parameters(), lr = 1e-3)
-device = torch.device("cuda" if torch.cuda.is_available() else 'mps')
-model.to(device)
-args.update({'max_eps':10, 'lr':1e-3})
-loss_list_val = run_epochs(model, args, optimizer, train_loader, device)
-torch.save(model.state_dict(), "./models/utterance_model.pt")
+# model = SiameseNetwork(input_dim=20, hidden_dim=300, n_classes=7)
+# optimizer = optim.Adam(model.parameters(), lr = 1e-3)
+# device = torch.device("cuda" if torch.cuda.is_available() else 'mps')
+# model.to(device)
+# args.update({'max_eps':10, 'lr':1e-3})
+# loss_list_val = run_epochs(model, args, optimizer, train_loader, device)
+# torch.save(model.state_dict(), "./models/utterance_model.pt")
 
         # --------------------------------------------------- #
         # -------------- Plot validation loss --------------- #
@@ -227,3 +227,13 @@ def plot_loss(loss_list):
     plt.show()
 
 # plot_loss(loss_list_val)
+
+        # --------------------------------------------------- #
+        # ----------------- Evaluate model ------------------ #
+        # --------------------------------------------------- #
+
+# load the trained model
+model = SiameseNetwork(20, 300, 7)
+model.load_state_dict(torch.load("./models/utterance_model.pt"))
+model.eval()
+
