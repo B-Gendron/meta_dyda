@@ -49,10 +49,8 @@ class SiameseNetwork(nn.Module):
         A = self.forward_once(input1)
         P = self.forward_once(input2)
         N = self.forward_once(input3)
-        triplet_loss = nn.TripletMarginLoss(margin=1.0, p=2)
-        output = triplet_loss(A, P, N)
 
-        return output
+        return A, P, N
 
 # TEST FORWARD PATH ON ONE ITERATION:
 # model = SiameseNetwork(input_dim=20, hidden_dim=300, n_classes=7)

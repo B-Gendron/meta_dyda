@@ -36,4 +36,6 @@ model.eval()
         # ------------------------------------------------------ #
 
 class EmotionsClassifier(nn.Module):
-    pass
+    '''
+        A simple classifier that takes as an imput the representations learnt by the siamese network and outputs a class prediction
+    '''

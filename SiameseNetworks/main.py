@@ -116,6 +116,7 @@ args['max_eps'] = 10
 def train(args, model, device, train_loader, optimizer, epoch):
     model.train()
     loss_it = []
+    triplet_loss = nn.TripletMarginLoss(margin=1.0, p=2)
 
     for it, batch in tqdm(enumerate(train_loader), desc="Epoch %s: " % (epoch+1), total=train_loader.__len__()):
 
@@ -125,12 +126,13 @@ def train(args, model, device, train_loader, optimizer, epoch):
         model.zero_grad()
 
         # perform training
-        output = model(batch['anchor'], batch['positive'], batch['negative'])
-        output.backward()
+        A, P, N = model(batch['anchor'], batch['positive'], batch['negative'])
+        loss = triplet_loss(A, P, N)
+        loss.backward()
         optimizer.step()
 
         # store loss history
-        loss_it.append(output.item())
+        loss_it.append(loss.item())
 
     # print useful information about the training progress and scores on this training set's full pass (i.e. 1 epoch)
     print("Epoch %s/%s - %s : (%s %s)" % (colored(str(epoch+1), 'blue'),args['max_eps'] , colored('Training', 'blue'), colored('average loss', 'cyan'), sum(loss_it)/len(loss_it)))
@@ -154,6 +156,7 @@ def train(args, model, device, train_loader, optimizer, epoch):
 def test(target, model, loader, device):
     model.eval()
     loss_it = []
+    triplet_loss = nn.TripletMarginLoss(margin=1.0, p=2)
 
     for it, batch in tqdm(enumerate(loader), desc="%s: " % (target), total=loader.__len__()):
 
@@ -161,9 +164,10 @@ def test(target, model, loader, device):
             
             batch = {'anchor': batch['anchor'].to(device), 'positive': batch['positive'].to(device), 'negative' : batch['negative'].to(device), 'label': batch['label'].to(device)}
 
-            output = model(batch['anchor'], batch['positive'], batch['negative'])
+            A, P, N = model(batch['anchor'], batch['positive'], batch['negative'])
+            loss = triplet_loss(A,P,N)
 
-            loss_it.append(output.item())
+            loss_it.append(loss.item())
 
     loss_it_avg = sum(loss_it)/len(loss_it)
 
