@@ -237,3 +237,36 @@ model = SiameseNetwork(20, 300, 7)
 model.load_state_dict(torch.load("./models/utterance_model.pt"))
 model.eval()
 
+def evaluate(target, model, classifier, test_loader, device='cpu'):
+    '''
+        Evaluate the representations learnt by the siamese network in the emotions classification task
+
+        @param target(str): either validation or test 
+        @param model:       a SiameseNetwork() model
+        @param classfier:   an EmotionsClassifier() model
+        @param test_loader: dataloader with test data
+        @param device: the  device where to run the evaluation (default=cpu)
+    '''
+    loss_it, acc_it = [], []
+    preds, trues = [], []
+
+    for it, batch in tqdm(enumerate(test_loader), desc="%s:" % (target), total=test_loader.__len__()):
+
+        with torch.no_grad():
+
+            batch = {'anchor': batch['anchor'].to(device), 'positive': batch['positive'].to(device), 'negative' : batch['negative'].to(device), 'label': batch['label'].to(device)}
+
+            # apply model to the batch
+            A, P, N = model(batch['anchor'], batch['positive'], batch['negative'])
+
+            # apply classifier to the batch to retrieve logits
+            logits_A, logits_P, logits_N = classifier(A), classifier(P), classifier(N)
+
+            # deduce the predicted classes for each element
+            _, classes_A = torch.max(logits_A,1)
+            _, classes_P = torch.max(logits_P,1)
+            _, classes_N = torch.max(logits_N,1)
+
+            
+
+
