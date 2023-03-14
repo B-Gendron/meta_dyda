@@ -17,6 +17,7 @@ from datasets.dataset_dict import DatasetDict
 import numpy as np
 import pandas as pd
 import random
+import matplotlib.pyplot as plt
 from copy import deepcopy
 from tqdm import tqdm
 from termcolor import colored
@@ -243,3 +244,24 @@ model = SiameseNetwork(input_dim=20, hidden_dim=300, n_classes=7)
 optimizer = optim.Adam(model.parameters(), lr = 1e-3)
 device = torch.device("cuda" if torch.cuda.is_available() else 'mps')
 loss_list_val = run_epochs(model, args, optimizer, train_loader, device)
+
+        # --------------------------------------------------- #
+        # -------------- Plot validation loss --------------- #
+        # --------------------------------------------------- #
+
+def plot_loss(loss_list):
+    '''
+        Plots a simple curve showing the different values of the validation loss for each epoch.
+
+        @param loss_list(list): A list of losses which length corresponds to the number of epochs
+    '''
+    plt.plot(range(len(loss_list)), loss_list)
+    plt.xlabel('Epochs')
+    # in our model we use Softmax then NLLLoss which means Cross Entropy loss
+    plt.ylabel('Triplet loss')
+    # in our training loop we used an Adam optimizer so we indicate it there
+    plt.title('lr: {}, optim_alg:{}'.format(args['lr'], 'Adam'))
+    # let's directly show the plot when calling this function
+    plt.show()
+
+plot_loss(loss_list_val)
