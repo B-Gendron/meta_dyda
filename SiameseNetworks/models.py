@@ -10,7 +10,7 @@ import torch.nn as nn
 from torchtext.vocab import FastText
 
         # --------------------------------------------------- #
-        # ------------------- Model class ------------------- #
+        # ------------- Siamese networks model -------------- #
         # --------------------------------------------------- #
 
 pretrained_vectors = FastText(language='en')
@@ -52,9 +52,30 @@ class SiameseNetwork(nn.Module):
 
         return A, P, N
 
-# TEST FORWARD PATH ON ONE ITERATION:
+# TEST : FORWARD PATH ON ONE ITERATION (TO BE DONE IN MAIN.PY)
 # model = SiameseNetwork(input_dim=20, hidden_dim=300, n_classes=7)
 # data = next(iter(train_loader))
 # output = model(data["anchor"][1], data["positive"][1], data["negative"][1])
 # print(output)
 # print("Expected output: tensor(0.8057, grad_fn=<MeanBackward0>)")
+
+        # ------------------------------------------------------ #
+        # ----------------- Classifier model ------------------- #
+        # ------------------------------------------------------ #
+
+class EmotionsClassifier(nn.Module):
+    '''
+        A simple classifier that takes as an imput the representations learnt by the siamese network and outputs a class prediction
+    '''
+    def __init__(self, input_dim, output_dim):
+        super(EmotionsClassifier, self).__init__()
+
+        self.classification_layer = torch.nn.Linear(in_features=input_dim, out_features=output_dim)
+
+        self.softmax = torch.nn.Softmax(dim=1)
+
+    def forward(self, x):
+        output = self.classification_layer(x)
+
+        logits = self.softmax(output)
+        return logits

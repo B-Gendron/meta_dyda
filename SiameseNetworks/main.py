@@ -24,7 +24,8 @@ from termcolor import colored
 
 # From others files of this repo
 from preprocessing import get_dyda_utterances
-from model import SiameseNetwork
+from models import SiameseNetwork, EmotionsClassifier
+
 
         # --------------------------------------------------- #
         # ------------------ Dataset class ------------------ #
@@ -103,6 +104,7 @@ def get_args_and_dataloaders():
 args, train_loader, val_loader, test_loader = get_args_and_dataloaders()
 args['max_eps'] = 10
 
+# TEST : CHECK THE DIMENSIONS OF THE DATALOADER
 # print("")
 # print("Check the dimensions of the dataloader:")
 # print(next(iter(train_loader))["anchor"].shape)
@@ -140,6 +142,7 @@ def train(args, model, device, train_loader, optimizer, epoch):
     # return the loss history so we can plot it later
     return loss_it
 
+# TEST : RUNNING ONE EPOCH
 # print("TEST ON ONE EPOCH")
 # model = SiameseNetwork(input_dim=20, hidden_dim=300, n_classes=7)
 # optimizer = optim.Adam(model.parameters(), lr = 1e-3)
@@ -195,13 +198,13 @@ def run_epochs(model, args, optimizer, train_loader, device):
     # return the list of epoch validation losses in order to use it later to create a plot
     return val_ep_losses
 
+# PERFORM TRAINING : TO BE DONE ONLY TO REFRESH THE MODEL PARAMETERS
 model = SiameseNetwork(input_dim=20, hidden_dim=300, n_classes=7)
 optimizer = optim.Adam(model.parameters(), lr = 1e-3)
 device = torch.device("cuda" if torch.cuda.is_available() else 'mps')
 model.to(device)
 args.update({'max_eps':10, 'lr':1e-3})
 loss_list_val = run_epochs(model, args, optimizer, train_loader, device)
-
 torch.save(model.state_dict(), "./models/utterance_model.pt")
 
         # --------------------------------------------------- #
