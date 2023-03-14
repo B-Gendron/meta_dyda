@@ -169,7 +169,7 @@ def train(args, model, device, train_loader, optimizer, epoch):
 
     for it, batch in tqdm(enumerate(train_loader), desc="Epoch %s: " % (epoch), total=train_loader.__len__()):
 
-        batch = {'anchor': batch['anchor'].to(device), 'positive': batch['positive'].to(device), 'negative' : batch['negative'].to(device), batch['label']: batch['label'].to(device)}
+        batch = {'anchor': batch['anchor'].to(device), 'positive': batch['positive'].to(device), 'negative' : batch['negative'].to(device), 'label': batch['label'].to(device)}
 
         optimizer.zero_grad()
 
@@ -182,14 +182,16 @@ def train(args, model, device, train_loader, optimizer, epoch):
         loss_it.append(output.item())
 
     # print useful information about the training progress and scores on this training set's full pass (i.e. 1 epoch)
-    print("Epoch %s/%s : %s : (%s %s) (%s %s)" % (colored(str(epoch), 'blue'),args['max_eps'] , colored('Training', 'blue'), colored('loss', 'cyan'), sum(loss_it)/len(loss_it), colored('acc', 'cyan')))
+    print("Epoch %s/%s : %s : (%s %s)" % (colored(str(epoch), 'blue'),args['max_eps'] , colored('Training', 'blue'), colored('loss', 'cyan'), sum(loss_it)/len(loss_it)))
 
     # return the loss history so we can plot it later
     return loss_it
 
 model = SiameseNetwork(input_dim=20, hidden_dim=300, n_classes=7)
 optimizer = optim.Adam(model.parameters(), lr = 1e-3)
-train(args=args, model=model, device='cpu', train_loader=train_loader, optimizer=optimizer, epoch=1)
+device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
+model.to(device)
+train(args=args, model=model, device=device, train_loader=train_loader, optimizer=optimizer, epoch=1)
 
         # --------------------------------------------------- #
         # ----------------- Inference loop ------------------ #
