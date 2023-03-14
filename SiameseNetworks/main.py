@@ -183,7 +183,7 @@ def train(args, model, device, train_loader, optimizer, epoch):
         loss_it.append(output.item())
 
     # print useful information about the training progress and scores on this training set's full pass (i.e. 1 epoch)
-    print("Epoch %s/%s - %s : (%s %s)" % (colored(str(epoch), 'blue'),args['max_eps'] , colored('Training', 'blue'), colored('average loss', 'cyan'), sum(loss_it)/len(loss_it)))
+    print("Epoch %s/%s - %s : (%s %s)" % (colored(str(epoch+1), 'blue'),args['max_eps'] , colored('Training', 'blue'), colored('average loss', 'cyan'), sum(loss_it)/len(loss_it)))
 
     # return the loss history so we can plot it later
     return loss_it
@@ -243,6 +243,7 @@ def run_epochs(model, args, optimizer, train_loader, device):
 model = SiameseNetwork(input_dim=20, hidden_dim=300, n_classes=7)
 optimizer = optim.Adam(model.parameters(), lr = 1e-3)
 device = torch.device("cuda" if torch.cuda.is_available() else 'mps')
+model.to(device)
 loss_list_val = run_epochs(model, args, optimizer, train_loader, device)
 
         # --------------------------------------------------- #
