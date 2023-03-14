@@ -182,40 +182,64 @@ def train(args, model, device, train_loader, optimizer, epoch):
         loss_it.append(output.item())
 
     # print useful information about the training progress and scores on this training set's full pass (i.e. 1 epoch)
-    print("Epoch %s/%s : %s : (%s %s)" % (colored(str(epoch), 'blue'),args['max_eps'] , colored('Training', 'blue'), colored('loss', 'cyan'), sum(loss_it)/len(loss_it)))
+    print("Epoch %s/%s - %s : (%s %s)" % (colored(str(epoch), 'blue'),args['max_eps'] , colored('Training', 'blue'), colored('average loss', 'cyan'), sum(loss_it)/len(loss_it)))
 
     # return the loss history so we can plot it later
     return loss_it
 
-model = SiameseNetwork(input_dim=20, hidden_dim=300, n_classes=7)
-optimizer = optim.Adam(model.parameters(), lr = 1e-3)
-device = torch.device("cuda" if torch.cuda.is_available() else 'cpu')
-model.to(device)
-train(args=args, model=model, device=device, train_loader=train_loader, optimizer=optimizer, epoch=1)
+# TEST ON ONE EPOCH
+# model = SiameseNetwork(input_dim=20, hidden_dim=300, n_classes=7)
+# optimizer = optim.Adam(model.parameters(), lr = 1e-3)
+# device = torch.device("cuda" if torch.cuda.is_available() else 'mps')
+# model.to(device)
+# print("Device: ", device)
+# train(args=args, model=model, device=device, train_loader=train_loader, optimizer=optimizer, epoch=1)
 
         # --------------------------------------------------- #
         # ----------------- Inference loop ------------------ #
         # --------------------------------------------------- #
 
-def test(model, device, test_loader):
+def test(target, model, loader, device):
     model.eval()
-    test_loss = 0
-    correct = 0
-    criterion = nn.TripletMarginLoss()
+    loss_it = []
 
-    with torch.no_grad():
-        for (images_1, images_2, targets) in test_loader:
-            images_1, images_2, targets = images_1.to(device), images_2.to(device), targets.to(device)
-            outputs = model(images_1, images_2).squeeze()
-            test_loss += criterion(outputs, targets).sum().item()  # sum up batch loss
-            pred = torch.where(outputs > 0.5, 1, 0)  # get the index of the max log-probability
-            correct += pred.eq(targets.view_as(pred)).sum().item()
+    for it, batch in tqdm(enumerate(loader), desc="%s: " % (target), total=loader.__len__()):
 
-    test_loss /= len(test_loader.dataset)
+        with torch.no_grad():
+            
+            batch = {'anchor': batch['anchor'].to(device), 'positive': batch['positive'].to(device), 'negative' : batch['negative'].to(device), 'label': batch['label'].to(device)}
 
-    # for the 1st epoch, the average loss is 0.0001 and the accuracy 97-98%
-    # using default settings. After completing the 10th epoch, the average
-    # loss is 0.0000 and the accuracy 99.5-100% using default settings.
-    print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
-        test_loss, correct, len(test_loader.dataset),
-        100. * correct / len(test_loader.dataset)))
+            output = model(batch['anchor'], batch['positive'], batch['negative'])
+
+            loss_it.append(output.item())
+
+    loss_it_avg = sum(loss_it)/len(loss_it)
+
+    # print useful information. Important during training as we want to know the performance over the validation set after each epoch
+    print("%s : (%s %s)" % ( colored(target, 'blue'), colored('average loss', 'cyan'), sum(loss_it)/len(loss_it)))
+
+    return loss_it_avg
+
+
+        # --------------------------------------------------- #
+        # ----------------- Actual training ----------------- #
+        # --------------------------------------------------- #
+
+def run_epochs(model, args, optimizer, train_loader, device):
+    val_ep_losses = []
+
+    for ep in range(args['max_eps']):
+        # train the model on the train loader
+        train(args, model, device, train_loader, optimizer, ep)
+        # infer on the validation loader
+        val_loss_avg = test("validation", model, val_loader, device)
+        # store the average loss for this epoch
+        val_ep_losses.append(val_loss_avg) 
+
+    # return the list of epoch validation losses in order to use it later to create a plot
+    return val_ep_losses
+
+model = SiameseNetwork(input_dim=20, hidden_dim=300, n_classes=7)
+optimizer = optim.Adam(model.parameters(), lr = 1e-3)
+device = torch.device("cuda" if torch.cuda.is_available() else 'mps')
+loss_list_val = run_epochs(model, args, optimizer, train_loader, device)
