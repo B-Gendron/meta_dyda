@@ -249,6 +249,7 @@ model.to(device)
 args.update({'max_eps':10, 'lr':1e-3})
 loss_list_val = run_epochs(model, args, optimizer, train_loader, device)
 
+torch.save(model.state_dict(), "./models/utterance_model.pt")
 
         # --------------------------------------------------- #
         # -------------- Plot validation loss --------------- #
@@ -269,4 +270,4 @@ def plot_loss(loss_list):
     # let's directly show the plot when calling this function
     plt.show()
 
-plot_loss(loss_list_val)
+# plot_loss(loss_list_val)
