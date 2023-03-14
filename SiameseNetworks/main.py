@@ -168,11 +168,12 @@ def train(args, model, device, train_loader, optimizer, epoch):
     model.train()
     loss_it = []
 
-    for it, batch in tqdm(enumerate(train_loader), desc="Epoch %s: " % (epoch), total=train_loader.__len__()):
+    for it, batch in tqdm(enumerate(train_loader), desc="Epoch %s: " % (epoch+1), total=train_loader.__len__()):
 
         batch = {'anchor': batch['anchor'].to(device), 'positive': batch['positive'].to(device), 'negative' : batch['negative'].to(device), 'label': batch['label'].to(device)}
 
         optimizer.zero_grad()
+        model.zero_grad()
 
         # perform training
         output = model(batch['anchor'], batch['positive'], batch['negative'])
@@ -188,13 +189,14 @@ def train(args, model, device, train_loader, optimizer, epoch):
     # return the loss history so we can plot it later
     return loss_it
 
-# TEST ON ONE EPOCH
+# print("TEST ON ONE EPOCH")
 # model = SiameseNetwork(input_dim=20, hidden_dim=300, n_classes=7)
 # optimizer = optim.Adam(model.parameters(), lr = 1e-3)
 # device = torch.device("cuda" if torch.cuda.is_available() else 'mps')
 # model.to(device)
 # print("Device: ", device)
 # train(args=args, model=model, device=device, train_loader=train_loader, optimizer=optimizer, epoch=1)
+
 
         # --------------------------------------------------- #
         # ----------------- Inference loop ------------------ #
@@ -217,7 +219,7 @@ def test(target, model, loader, device):
     loss_it_avg = sum(loss_it)/len(loss_it)
 
     # print useful information. Important during training as we want to know the performance over the validation set after each epoch
-    print("%s : (%s %s)" % ( colored(target, 'blue'), colored('average loss', 'cyan'), sum(loss_it)/len(loss_it)))
+    print("%s : (%s %s)" % ( colored(target, 'blue'), colored('average loss', 'cyan'), loss_it_avg))
 
     return loss_it_avg
 
@@ -244,7 +246,9 @@ model = SiameseNetwork(input_dim=20, hidden_dim=300, n_classes=7)
 optimizer = optim.Adam(model.parameters(), lr = 1e-3)
 device = torch.device("cuda" if torch.cuda.is_available() else 'mps')
 model.to(device)
+args.update({'max_eps':10, 'lr':1e-3})
 loss_list_val = run_epochs(model, args, optimizer, train_loader, device)
+
 
         # --------------------------------------------------- #
         # -------------- Plot validation loss --------------- #
