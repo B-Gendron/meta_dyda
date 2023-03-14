@@ -24,13 +24,6 @@ from copy import deepcopy
 from tqdm import tqdm
 from termcolor import colored
 
-from model import SiameseNetwork
-
-# load the model
-model = SiameseNetwork(20, 300, 7)
-model.load_state_dict(torch.load("./models/utterance_model.pt"))
-model.eval()
-
         # ------------------------------------------------------ #
         # --------------------- Classifier --------------------- #
         # ------------------------------------------------------ #
@@ -39,3 +32,16 @@ class EmotionsClassifier(nn.Module):
     '''
         A simple classifier that takes as an imput the representations learnt by the siamese network and outputs a class prediction
     '''
+    def __init__(self, input_dim, output_dim):
+        super(EmotionsClassifier, self).__init__()
+
+        self.classification_layer = torch.nn.Linear(in_features=input_dim, out_features=output_dim)
+
+        self.softmax = torch.nn.Softmax(dim=1)
+
+    def forward(self, x):
+        output = self.classification_layer(x)
+
+        logits = self.softmax(output)
+        return logits
+    
