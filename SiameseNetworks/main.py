@@ -189,7 +189,7 @@ def train(args, model, device, train_loader, optimizer, epoch):
 
 model = SiameseNetwork(input_dim=20, hidden_dim=300, n_classes=7)
 optimizer = optim.Adam(model.parameters(), lr = 1e-3)
-device = torch.device("gpu" if torch.cuda.is_available() else 'cpu')
+device = torch.device("cuda" if torch.cuda.is_available() else 'cpu')
 model.to(device)
 train(args=args, model=model, device=device, train_loader=train_loader, optimizer=optimizer, epoch=1)
 
