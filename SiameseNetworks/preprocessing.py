@@ -132,6 +132,9 @@ def get_dyda_utterances():
 
 dyda_utterances = get_dyda_utterances()
 
+DatasetDict(dyda_utterances).save_to_disk('./data')
+
+
 # UNCOMMENT THIS IF YOU NEED TO SAVE THE DATA AGAIN:
 # import json
 # with open("data/data_utterances.json", 'w') as f:
